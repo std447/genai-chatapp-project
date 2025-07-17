@@ -1,0 +1,23 @@
+# Gitignore for genai-chatapp-project
+
+# Node.js
+node_modules/
+dist/ # Build output for frontend
+.env* # Local environment variables (e.g., .env.local, .env.development, .env.production)
+
+# Deno
+.deno/        # Deno cache directory
+target/       # Deno build output (if using deno compile)
+deno.lock     # Deno lock file (if not explicitly managed)
+
+# macOS
+.DS_Store
+
+# VSCode
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
