@@ -1,0 +1,71 @@
+# .github/workflows/deploy-worker.yml
+name: Deploy Backend Worker
+
+on:
+  push:
+    branches:
+      - main
+      - development
+      - 'feat/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Determine Backend Deployment Trigger
+        id: check_paths
+        run: |
+          CURRENT_BRANCH="${{ github.ref_name }}"
+          
+          if [[ "$CURRENT_BRANCH" == "main" ]]; then
+            echo "Checking for backend/shared changes on production branch ($CURRENT_BRANCH)..."
+            CHANGES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E "^backend/cloudflare-worker/|^shared/types/" || true)
+            
+            if [[ -n "$CHANGES" ]]; then
+              echo "deploy_backend=true" >> "$GITHUB_OUTPUT"
+              echo "::notice file=.github/workflows/deploy-worker.yml::Detected backend or shared changes on $CURRENT_BRANCH. Deploying backend."
+            else
+              echo "deploy_backend=false" >> "$GITHUB_OUTPUT"
+              echo "::notice file=.github/workflows/deploy-worker.yml::No backend or shared changes on $CURRENT_BRANCH. Skipping backend deployment."
+            fi
+          else
+            echo "deploy_backend=true" >> "$GITHUB_OUTPUT"
+            echo "::notice file=.github/workflows/deploy-worker.yml::Deploying backend for preview branch $CURRENT_BRANCH to ensure synchronization."
+          fi
+
+      - name: Install backend dependencies
+        if: steps.check_paths.outputs.deploy_backend == 'true'
+        run: npm install
+        working-directory: ./backend/cloudflare-worker
+
+      - name: Deploy Worker
+        if: steps.check_paths.outputs.deploy_backend == 'true'
+        run: |
+          # Determine worker name for production or preview using the hash
+          WORKER_NAME_PREFIX="genai-chatapp" # Your base worker name
+          # DEPLOY_DOMAIN="st-d447.workers.dev" # This is for frontend URL construction, not worker naming
+
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            # Production Worker name
+            WORKER_FULL_NAME="${WORKER_NAME_PREFIX}"
+          else
+            # For preview branches, use the short commit SHA as the prefix
+            # CORRECTED SYNTAX: Use standard Bash string slicing ${VARIABLE:OFFSET:LENGTH}
+            COMMIT_SHORT_SHA="${{ github.sha }}" # Get the full SHA first
+            WORKER_FULL_NAME="${COMMIT_SHORT_SHA:0:8}-${WORKER_NAME_PREFIX}"
+          fi
+          
+          echo "Deploying Worker with name: $WORKER_FULL_NAME"
+          npx wrangler deploy --name "$WORKER_FULL_NAME"
+          
+        working-directory: ./backend/cloudflare-worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
