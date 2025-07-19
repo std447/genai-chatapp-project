@@ -22,7 +22,8 @@ if [[ "$CF_PAGES_BRANCH" == "main" || "$CF_PAGES_BRANCH" == "master" ]]; then
 else
     # Preview build: use the short commit SHA for dynamic preview Worker URL
     # CF_COMMIT_SHA contains the full commit hash. We take the first 8 characters.
-    COMMIT_SHORT_SHA="${CF_COMMIT_SHA}"
+    COMMIT_SHORT_SHA="${WORKERS_CI_COMMIT_SHA}"
+    #CF_PAGES_COMMIT_SHA
     API_BASE_URL="https://${COMMIT_SHORT_SHA:0:8}-${WORKER_BASE_NAME}.${WORKER_DOMAIN}"
 fi
 
