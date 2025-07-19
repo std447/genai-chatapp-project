@@ -7,6 +7,8 @@ on:
       - main
       - development
       - 'feat/**'
+  pull_request: 
+    branches: ["main"]
 
 jobs:
   deploy:
