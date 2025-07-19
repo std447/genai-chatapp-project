@@ -79,7 +79,7 @@ jobs:
           # This relies on your backend/cloudflare-worker/wrangler.jsonc to correctly define the Worker's name,
           # routing, and how preview deployments (e.g., hash-prefixed URLs) are handled for your
           # 'genai-chatapp' application/environment.
-          npx wrangler deploy
+          npx wrangler deploy && npx wrangler versions upload --preview-alias development
           
         working-directory: ./backend/cloudflare-worker
         env:
