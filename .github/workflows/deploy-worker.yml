@@ -1,4 +1,3 @@
-# .github/workflows/deploy-worker.yml
 name: Deploy Backend Worker
 
 on:
@@ -7,8 +6,12 @@ on:
       - main
       - development
       - 'feat/**'
+      # - feature/**
   pull_request: 
-    branches: ["main"]
+    branches:
+      - main
+  workflow_dispatch:
+    
 
 jobs:
   deploy:
@@ -20,26 +23,50 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/cloudflare-worker/package-lock.json
+
       - name: Determine Backend Deployment Trigger
         id: check_paths
         run: |
+          EVENT_NAME="${{ github.event_name }}"
           CURRENT_BRANCH="${{ github.ref_name }}"
+          BASE_BRANCH="${{ github.base_ref }}" # Target branch for pull_request events
           
-          if [[ "$CURRENT_BRANCH" == "main" ]]; then
-            echo "Checking for backend/shared changes on production branch ($CURRENT_BRANCH)..."
-            CHANGES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E "^backend/cloudflare-worker/|^shared/types/" || true)
-            
-            if [[ -n "$CHANGES" ]]; then
-              echo "deploy_backend=true" >> "$GITHUB_OUTPUT"
-              echo "::notice file=.github/workflows/deploy-worker.yml::Detected backend or shared changes on $CURRENT_BRANCH. Deploying backend."
-            else
-              echo "deploy_backend=false" >> "$GITHUB_OUTPUT"
-              echo "::notice file=.github/workflows/deploy-worker.yml::No backend or shared changes on $CURRENT_BRANCH. Skipping backend deployment."
+          # Determine whether to deploy the backend based on the trigger event and branch
+          DEPLOY_BACKEND="false"
+
+          if [[ "$EVENT_NAME" == 'workflow_dispatch' ]]; then
+            # Manually triggered workflow: always deploy
+            echo "::notice:: Workflow manually triggered. Forcing backend deployment."
+            DEPLOY_BACKEND="true"
+          elif [[ "$EVENT_NAME" == 'pull_request' ]]; then
+            # Pull request event: Always deploy for preview environments
+            # This ensures a preview Worker is created/updated for the PR's head commit.
+            echo "::notice:: Pull request event detected (targeting $BASE_BRANCH). Deploying backend for preview."
+            DEPLOY_BACKEND="true"
+          elif [[ "$EVENT_NAME" == 'push' ]]; then
+            if [[ "$CURRENT_BRANCH" == "main" ]]; then
+              # Push to production branch (main): only deploy if backend or shared code changed
+              echo "Checking for backend/shared changes on production branch ($CURRENT_BRANCH)..."
+              # git diff compares the previous commit in the branch (github.event.before) with the current head (github.sha).
+              CHANGES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E "^backend/cloudflare-worker/|^shared/types/" || true)
+              
+              if [[ -n "$CHANGES" ]]; then
+                DEPLOY_BACKEND="true"
+                echo "::notice file=.github/workflows/deploy-worker.yml::Detected backend or shared changes on $CURRENT_BRANCH. Deploying production backend."
+              else
+                echo "::notice file=.github/workflows/deploy-worker.yml::No backend or shared changes on $CURRENT_BRANCH. Skipping production backend deployment."
+              fi
+            else # Push to development or feat/** branches
+              # Push to preview branches: always deploy for synchronization
+              echo "::notice file=.github/workflows/deploy-worker.yml::Push to preview branch ($CURRENT_BRANCH). Deploying backend to ensure synchronization."
+              DEPLOY_BACKEND="true"
             fi
-          else
-            echo "deploy_backend=true" >> "$GITHUB_OUTPUT"
-            echo "::notice file=.github/workflows/deploy-worker.yml::Deploying backend for preview branch $CURRENT_BRANCH to ensure synchronization."
           fi
+
+          echo "deploy_backend=$DEPLOY_BACKEND" >> "$GITHUB_OUTPUT"
+          echo "Determined DEPLOY_BACKEND: $DEPLOY_BACKEND"
 
       - name: Install backend dependencies
         if: steps.check_paths.outputs.deploy_backend == 'true'
@@ -49,12 +76,10 @@ jobs:
       - name: Deploy Worker
         if: steps.check_paths.outputs.deploy_backend == 'true'
         run: |
-          # Simply run npx wrangler deploy.
-          # This relies on your backend/cloudflare-worker/wrangler.jsonc
-          # to correctly define the Worker's name, routing, and how preview
-          # deployments (e.g., hash-prefixed URLs) are handled for your
-          # 'genai-chatapp' application/environment.
           echo "Running npx wrangler deploy. Configuration is expected from wrangler.jsonc."
+          # This relies on your backend/cloudflare-worker/wrangler.jsonc to correctly define the Worker's name,
+          # routing, and how preview deployments (e.g., hash-prefixed URLs) are handled for your
+          # 'genai-chatapp' application/environment.
           npx wrangler deploy
           
         working-directory: ./backend/cloudflare-worker
