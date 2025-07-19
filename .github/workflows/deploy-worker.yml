@@ -49,22 +49,13 @@ jobs:
       - name: Deploy Worker
         if: steps.check_paths.outputs.deploy_backend == 'true'
         run: |
-          # Determine worker name for production or preview using the hash
-          WORKER_NAME_PREFIX="genai-chatapp" # Your base worker name
-          # DEPLOY_DOMAIN="st-d447.workers.dev" # This is for frontend URL construction, not worker naming
-
-          if [[ "${{ github.ref_name }}" == "main" ]]; then
-            # Production Worker name
-            WORKER_FULL_NAME="${WORKER_NAME_PREFIX}"
-          else
-            # For preview branches, use the short commit SHA as the prefix
-            # CORRECTED SYNTAX: Use standard Bash string slicing ${VARIABLE:OFFSET:LENGTH}
-            COMMIT_SHORT_SHA="${{ github.sha }}" # Get the full SHA first
-            WORKER_FULL_NAME="${COMMIT_SHORT_SHA:0:8}-${WORKER_NAME_PREFIX}"
-          fi
-          
-          echo "Deploying Worker with name: $WORKER_FULL_NAME"
-          npx wrangler deploy --name "$WORKER_FULL_NAME"
+          # Simply run npx wrangler deploy.
+          # This relies on your backend/cloudflare-worker/wrangler.jsonc
+          # to correctly define the Worker's name, routing, and how preview
+          # deployments (e.g., hash-prefixed URLs) are handled for your
+          # 'genai-chatapp' application/environment.
+          echo "Running npx wrangler deploy. Configuration is expected from wrangler.jsonc."
+          npx wrangler deploy
           
         working-directory: ./backend/cloudflare-worker
         env:
