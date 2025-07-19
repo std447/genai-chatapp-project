@@ -23,13 +23,6 @@ graph TD
     A --o|Makes API Calls| D(Cloudflare Workers)
     D -->|Hosts| E(Hono Backend)
     E -->|Interacts with| F(Groq API)
-
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style B fill:#bbf,stroke:#333,stroke-width:2px
-    style C fill:#ccf,stroke:#333,stroke-width:2px
-    style D fill:#ddf,stroke:#333,stroke-width:2px
-    style E fill:#eef,stroke:#333,stroke-width:2px
-    style F fill:#fcf,stroke:#333,stroke-width:2px
 ```
 
 ## 📂 Project Structure
@@ -151,7 +144,7 @@ Navigate to the frontend directory.
 
 ```bash
 cd ../../frontend # Go up two levels from cloudflare-worker to genai-chatapp-project/frontend
-npm install
+npm install # or 
 ```
 
 **Configure Backend URL:**
