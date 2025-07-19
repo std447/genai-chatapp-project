@@ -1,22 +1,21 @@
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import chatRouter from './routes/chat';
 
-interface Env { // Temporarily define Env here until we properly import from shared/src/types.ts
-  KV_STORE: KVNamespace; // Cloudflare specific KV type
-  GROQ_API_KEY: string;
-  FIREBASE_PUBLIC_KEYS_URL: string;
-  FIREBASE_PROJECT_ID: string;
-}
+const app = new Hono<{ Bindings: Env }>();
 
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    // Log to console for debugging
-    console.log(`Request received: ${request.url}`);
+app.use('*', cors({
+  origin: 'http://localhost:5173',
+  allowHeaders: ['Content-Type', 'Authorization'],
+  allowMethods: ['POST', 'GET', 'OPTIONS'],
+  maxAge: 600,
+  credentials: true,
+}));
 
-    // Example: Responding based on path
-    if (request.url.includes("/api/chat")) {
-      // Placeholder for actual chat logic
-      return new Response("Chat API endpoint reached (Cloudflare Worker)", { status: 200 });
-    }
+app.route('/chat', chatRouter);
 
-    return new Response("Cloudflare Worker Backend is active!");
-  },
-};
+app.get('/', (c) => {
+  return c.text('Cloudflare Worker AI Chat Backend is running!');
+});
+
+export default app;
