@@ -27,6 +27,8 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "@latest"
           workingDirectory: "./backend/cloudflare-worker"
+          preCommands: npm list
+          command: deploy
           
       - name: print deployment-url
         env:
