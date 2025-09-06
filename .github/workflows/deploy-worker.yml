@@ -32,7 +32,7 @@ jobs:
           
       - name: print deployment-url
         env:
-          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          DEPLOYMENT_URL: ${{ steps.update_url.outputs.deployment-url }}
         run: echo $DEPLOYMENT_URL
       # - name: Add backend preview url
       #   env:
