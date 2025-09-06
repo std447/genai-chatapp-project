@@ -3,10 +3,10 @@ name: Deploy Genchat-app
 on:
   push:
     branches:
-      - development
+      - develop
   pull_request: 
     branches:
-      - development
+      - develop
   workflow_dispatch:
     
 jobs:
@@ -25,8 +25,11 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
+          command:  |
+            npm ci
+            npm run build
           workingDirectory: "backend/cloudflare-worker"
+          
       - name: print deployment-url
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
