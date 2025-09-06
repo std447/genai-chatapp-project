@@ -60,6 +60,9 @@ app.use('*',async (c,next) => {
 });
 
 app.route('/chat', chatRouter);
+app.get('/chat',(c)=>{
+  return c.text('Chat route working')
+})
 
 app.get('/', (c) => {
   return c.text('Cloudflare Worker AI Chat Backend is running!');

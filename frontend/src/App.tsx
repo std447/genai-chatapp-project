@@ -136,7 +136,7 @@ function App() {
         <div ref={messageEndRef}></div>
       </main>
       <footer className="fixed bottom-0 inset-x-0 bg-white dark:bg-gray-800 max-h-20 p-3 shadow-lg border-t border-gray-200 z-10">
-        <form onSubmit={handleSendMessage} className="flex max-w-2xl mx-auto w-full gap-3">
+        <form onSubmit={handleSendMessage} method="POST" className="flex max-w-2xl mx-auto w-full gap-3">
           <input
             type="text"
             value={inputMessage}
