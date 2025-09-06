@@ -15,13 +15,13 @@ export async function getGroqChatCompletion(groqApiKey: string, message: string)
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gemma2-9b-it',
+      model: 'llama-3.1-8b-instant',
       messages: [
         { role: 'system', content: 'You are a helpful AI assistant. Keep responses concise and to the point.' },
         { role: 'user', content: message },
       ],
-      temperature: 0.7,
-      max_tokens: 150,
+      temperature: 0.5,
+      max_completion_tokens: 150,
     }),
   });
 
